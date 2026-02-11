@@ -1,0 +1,12 @@
+[package]
+name = "libversion-sys"
+version = "0.1.0"
+edition = "2024"
+links = "version"
+build = "build.rs"
+description = "FFI bindings to libversion, an advanced version string comparison library"
+license = "MIT"
+
+[build-dependencies]
+cmake = "0.1"
+bindgen = "0.71"

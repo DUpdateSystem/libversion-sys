@@ -1,0 +1,3 @@
+[submodule "libversion"]
+	path = libversion
+	url = https://github.com/repology/libversion.git
