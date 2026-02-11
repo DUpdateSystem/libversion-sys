@@ -49,10 +49,11 @@ fn main() {
     cmake_cfg.build_target("libversion_static");
 
     // Work around cmake-rs not setting CMAKE_ANDROID_NDK for Android targets.
-    if target_os == "android" {
-        if let Some(ndk_root) = detect_android_ndk() {
-            cmake_cfg.define("CMAKE_ANDROID_NDK", &ndk_root);
-        }
+
+    if target_os == "android"
+        && let Some(ndk_root) = detect_android_ndk()
+    {
+        cmake_cfg.define("CMAKE_ANDROID_NDK", &ndk_root);
     }
 
     let dst = cmake_cfg.build();
