@@ -1,11 +1,15 @@
 [package]
 name = "libversion-sys"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 links = "version"
 build = "build.rs"
 description = "FFI bindings to libversion, an advanced version string comparison library"
 license = "MIT"
+repository = "https://github.com/DUpdateSystem/libversion-sys"
+homepage = "https://github.com/DUpdateSystem/libversion-sys"
+documentation = "https://docs.rs/libversion-sys"
+exclude = [".github/", ".gitignore", ".gitmodules"]
 
 [build-dependencies]
 cmake = "0.1"
