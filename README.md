@@ -1,8 +1,12 @@
 # libversion-sys
 
+[![Crates.io](https://img.shields.io/crates/v/libversion-sys.svg)](https://crates.io/crates/libversion-sys)
+[![docs.rs](https://docs.rs/libversion-sys/badge.svg)](https://docs.rs/libversion-sys)
+[![License: MIT](https://img.shields.io/crates/l/libversion-sys.svg)](LICENSE)
+
 Rust FFI bindings to [libversion](https://github.com/repology/libversion), an advanced version string comparison library.
 
-The C source is included as a Git submodule and compiled from source via CMake -- no system-level installation of libversion is required.
+The C source is included and compiled from source via CMake -- no system-level installation of libversion is required.
 
 ## Usage
 
@@ -10,7 +14,7 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-libversion-sys = { git = "https://github.com/DUpdateSystem/libversion-sys" }
+libversion-sys = "0.1"
 ```
 
 ### Safe API
