@@ -8,6 +8,22 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  check-generated:
+    name: Check Generated Headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - run: sudo apt-get update && sudo apt-get install -y cmake
+      - run: bash scripts/generate-headers.sh
+      - name: Verify generated headers are up to date
+        run: |
+          if ! git diff --exit-code generated/; then
+            echo "::error::Generated headers are out of date. Run 'bash scripts/generate-headers.sh' and commit the changes."
+            exit 1
+          fi
+
   clippy-sarif:
     name: Clippy SARIF
     runs-on: ubuntu-latest
@@ -21,7 +37,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: sudo apt-get update && sudo apt-get install -y cmake libclang-dev
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - run: cargo install clippy-sarif sarif-fmt
       - run: >
           cargo clippy --all-targets --all-features --message-format=json -- -Dwarnings |
@@ -51,7 +67,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: sudo apt-get update && sudo apt-get install -y cmake libclang-dev
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
@@ -62,5 +78,5 @@ jobs:
         with:
           submodules: true
       - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt-get update && sudo apt-get install -y cmake libclang-dev
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - run: cargo test
