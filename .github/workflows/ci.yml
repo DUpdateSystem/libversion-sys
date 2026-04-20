@@ -71,7 +71,7 @@ jobs:
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
-    name: Test
+    name: Test (vendored)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -80,3 +80,23 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - run: cargo test
+
+  test-system:
+    name: Test (system libversion)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y cmake libclang-dev pkg-config
+      - name: Build and install libversion for pkg-config mode
+        run: |
+          cmake -S libversion -B "$RUNNER_TEMP/libversion-build" -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/libversion-install"
+          cmake --build "$RUNNER_TEMP/libversion-build"
+          cmake --install "$RUNNER_TEMP/libversion-build"
+      - name: Test without vendored feature
+        run: cargo test --no-default-features
+        env:
+          PKG_CONFIG_PATH: ${{ runner.temp }}/libversion-install/lib/pkgconfig:${{ runner.temp }}/libversion-install/lib64/pkgconfig
+          LD_LIBRARY_PATH: ${{ runner.temp }}/libversion-install/lib:${{ runner.temp }}/libversion-install/lib64

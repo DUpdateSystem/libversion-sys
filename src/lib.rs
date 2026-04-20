@@ -20,6 +20,7 @@ pub mod ffi {
 }
 
 pub use ffi::{
+    LIBVERSION_VERSION_MAJOR, LIBVERSION_VERSION_MINOR, LIBVERSION_VERSION_PATCH,
     VERSIONFLAG_ANY_IS_PATCH, VERSIONFLAG_LOWER_BOUND, VERSIONFLAG_P_IS_PATCH,
     VERSIONFLAG_UPPER_BOUND, version_compare2, version_compare4,
 };
@@ -79,6 +80,22 @@ pub fn compare_with_flags(v1: &str, v2: &str, v1_flags: u32, v2_flags: u32) -> O
     result.cmp(&0)
 }
 
+/// Returns the libversion release string from the headers used during build.
+pub fn version_string() -> &'static str {
+    std::str::from_utf8(&ffi::LIBVERSION_VERSION[..ffi::LIBVERSION_VERSION.len() - 1])
+        .expect("libversion version string is not valid UTF-8")
+}
+
+/// Rust equivalent of the `LIBVERSION_VERSION_ATLEAST` macro.
+#[allow(clippy::absurd_extreme_comparisons)]
+pub const fn version_atleast(major: u32, minor: u32, patch: u32) -> bool {
+    (LIBVERSION_VERSION_MAJOR > major)
+        || (LIBVERSION_VERSION_MAJOR == major && LIBVERSION_VERSION_MINOR > minor)
+        || (LIBVERSION_VERSION_MAJOR == major
+            && LIBVERSION_VERSION_MINOR == minor
+            && LIBVERSION_VERSION_PATCH >= patch)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -116,10 +133,88 @@ mod tests {
     }
 
     #[test]
+    fn any_is_patch_flag() {
+        assert_eq!(compare("1.0foopatchset1", "1.0"), Ordering::Less);
+        assert_eq!(
+            compare_with_flags("1.0foopatchset1", "1.0", VERSIONFLAG_ANY_IS_PATCH, 0),
+            Ordering::Greater,
+        );
+    }
+
+    #[test]
+    fn lower_bound_flag() {
+        assert_eq!(
+            compare_with_flags("1.0alpha1", "1.0", 0, VERSIONFLAG_LOWER_BOUND),
+            Ordering::Greater,
+        );
+        assert_eq!(
+            compare_with_flags("0.999", "1.0", 0, VERSIONFLAG_LOWER_BOUND),
+            Ordering::Less,
+        );
+    }
+
+    #[test]
+    fn upper_bound_flag() {
+        assert_eq!(
+            compare_with_flags("1.0.1", "1.0", 0, VERSIONFLAG_UPPER_BOUND),
+            Ordering::Less,
+        );
+        assert_eq!(
+            compare_with_flags("1.1", "1.0", 0, VERSIONFLAG_UPPER_BOUND),
+            Ordering::Greater,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "v1 contains interior null byte")]
+    fn compare_rejects_interior_null() {
+        let _ = compare("1.0\0rc1", "1.0");
+    }
+
+    #[test]
+    #[should_panic(expected = "v2 contains interior null byte")]
+    fn compare_with_flags_rejects_interior_null() {
+        let _ = compare_with_flags("1.0", "1.0\0rc1", 0, 0);
+    }
+
+    #[test]
+    fn version_metadata() {
+        let parts = version_string()
+            .split('.')
+            .map(|part| part.parse::<u32>().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            parts,
+            vec![
+                LIBVERSION_VERSION_MAJOR,
+                LIBVERSION_VERSION_MINOR,
+                LIBVERSION_VERSION_PATCH,
+            ]
+        );
+        assert!(version_atleast(
+            LIBVERSION_VERSION_MAJOR,
+            LIBVERSION_VERSION_MINOR,
+            LIBVERSION_VERSION_PATCH,
+        ));
+        assert!(!version_string().is_empty());
+    }
+
+    #[test]
     fn ffi_direct() {
         let v1 = CString::new("1.0").unwrap();
         let v2 = CString::new("2.0").unwrap();
         let result = unsafe { ffi::version_compare2(v1.as_ptr(), v2.as_ptr()) };
         assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn ffi_compare4_direct() {
+        let v1 = CString::new("1.0p1").unwrap();
+        let v2 = CString::new("1.0").unwrap();
+        let result = unsafe {
+            ffi::version_compare4(v1.as_ptr(), v2.as_ptr(), VERSIONFLAG_P_IS_PATCH as i32, 0)
+        };
+        assert_eq!(result, 1);
     }
 }

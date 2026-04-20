@@ -6,7 +6,7 @@
 
 Rust FFI bindings to [libversion](https://github.com/repology/libversion), an advanced version string comparison library.
 
-The C source is included and compiled from source via CMake -- no system-level installation of libversion is required.
+By default the crate vendors the C source and builds it directly, so no system-level installation of libversion is required. If you prefer linking an installed system copy, disable default features and make sure `pkg-config` can find `libversion`.
 
 ## Usage
 
@@ -14,7 +14,21 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-libversion-sys = "0.1"
+libversion-sys = "0.2"
+```
+
+Use the default vendored build:
+
+```toml
+[dependencies]
+libversion-sys = "0.2"
+```
+
+Or link a system-installed `libversion`:
+
+```toml
+[dependencies]
+libversion-sys = { version = "0.2", default-features = false }
 ```
 
 ### Safe API
@@ -46,6 +60,13 @@ let result = unsafe { ffi::version_compare2(v1.as_ptr(), v2.as_ptr()) };
 assert_eq!(result, -1);
 ```
 
+### Version metadata
+
+```rust
+assert!(libversion_sys::version_atleast(3, 0, 0));
+assert!(!libversion_sys::version_string().is_empty());
+```
+
 ## Flags
 
 | Flag | Description |
@@ -58,15 +79,23 @@ assert_eq!(result, -1);
 ## Build requirements
 
 - Rust (stable)
-- CMake
-- C compiler (gcc/clang)
+- C compiler (gcc/clang) for the default vendored build
 - libclang (for bindgen)
+- `pkg-config` and a system `libversion` installation when building with `default-features = false`
 
 On Ubuntu/Debian:
 
 ```sh
-sudo apt-get install cmake libclang-dev
+sudo apt-get install libclang-dev
 ```
+
+For system linking:
+
+```sh
+sudo apt-get install pkg-config libversion-dev
+```
+
+`cmake` is only needed by maintainers when regenerating `generated/libversion/config.h` and `generated/libversion/export.h` after updating the vendored libversion source.
 
 ## License
 
